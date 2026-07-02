@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="budget_tracker">Budget Tracker</string>
+    <string name="add">Add</string>
+    <string name="back">Back</string>
+    <string name="enter_note">Enter note</string>
+    <string name="amount">Amount</string>
+    <string name="save">Save</string>
+</resources>

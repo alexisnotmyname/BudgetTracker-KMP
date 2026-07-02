@@ -1,0 +1,25 @@
+CREATE TABLE BudgetTransactionEntity (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    amount REAL NOT NULL,
+    paymentMethod TEXT NOT NULL,
+    category TEXT NOT NULL,
+    note TEXT NOT NULL,
+    budgetItemType TEXT NOT NULL,
+    dateTimeCreated INTEGER,
+    dateTimeUpdated INTEGER
+);
+
+getAllBudgetTransactions:
+SELECT * FROM BudgetTransactionEntity ORDER BY dateTimeCreated DESC;
+
+insertBudgetTransaction:
+INSERT INTO BudgetTransactionEntity(amount, paymentMethod, category, note, budgetItemType, dateTimeCreated, dateTimeUpdated)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateBudgetTransaction:
+UPDATE BudgetTransactionEntity
+SET amount = ?, paymentMethod = ?, category = ?, note = ?, budgetItemType = ?, dateTimeUpdated = ?
+WHERE id = ?;
+
+deleteBudgetTransaction:
+DELETE FROM BudgetTransactionEntity WHERE id = ?;
