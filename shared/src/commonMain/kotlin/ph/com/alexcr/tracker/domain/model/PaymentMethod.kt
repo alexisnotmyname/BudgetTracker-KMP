@@ -9,4 +9,5 @@ import androidx.compose.ui.graphics.vector.ImageVector
 enum class PaymentMethod(val label: String, val icon: ImageVector) {
     CASH("Cash", Icons.Filled.Wallet),
     BANK("Bank", Icons.Filled.AccountBalance)
+
 }

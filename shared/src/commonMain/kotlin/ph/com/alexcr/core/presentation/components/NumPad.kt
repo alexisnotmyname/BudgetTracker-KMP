@@ -11,9 +11,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -67,6 +70,33 @@ fun NumPad(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NumPadBottomSheet(
+    onDismiss: () -> Unit,
+    onDigit: (String) -> Unit,
+    onDecimal: () -> Unit = {},
+    onBackspace: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp),
+        dragHandle = null
+    ) {
+        NumPad(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            onDigit = onDigit,
+            onDecimal = onDecimal,
+            onBackspace = onBackspace,
+        )
+    }
+}
+
 @Composable
 private fun NumPadKey(
     label: String,
@@ -92,12 +122,12 @@ private fun NumPadKey(
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = when {
-                isBackspace -> MaterialTheme.colorScheme.errorContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
+                isBackspace -> MaterialTheme.colorScheme.secondaryContainer
+                else -> MaterialTheme.colorScheme.background
             },
             contentColor = when {
-                isBackspace -> MaterialTheme.colorScheme.onErrorContainer
-                else -> MaterialTheme.colorScheme.onSurface
+                isBackspace -> MaterialTheme.colorScheme.onSecondaryContainer
+                else -> MaterialTheme.colorScheme.onBackground
             },
             disabledContainerColor = Color.Transparent,
             disabledContentColor = Color.Transparent,

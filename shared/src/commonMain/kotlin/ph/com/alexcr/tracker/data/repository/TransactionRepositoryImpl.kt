@@ -8,13 +8,13 @@ import ph.com.alexcr.tracker.domain.repository.TransactionRepository
 class TransactionRepositoryImpl(
     private val localDbSource: LocalDbSource
 ): TransactionRepository {
-    override suspend fun getTransactions(): Flow<List<BudgetTransaction>> {
+    override fun getTransactions(): Flow<List<BudgetTransaction>> {
         return localDbSource.getTransactions()
     }
 
     override suspend fun addTransaction(transaction: BudgetTransaction): Result<Unit> {
         return try {
-            localDbSource.upsertExpense(transaction)
+            localDbSource.upsertTransaction(transaction)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -26,6 +26,6 @@ class TransactionRepositoryImpl(
     }
 
     override suspend fun deleteTransaction(transaction: BudgetTransaction) {
-
+        localDbSource.deleteTransaction(transaction.id)
     }
 }

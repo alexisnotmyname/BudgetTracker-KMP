@@ -4,8 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 
 interface LocalDbSource {
-
-    fun upsertExpense(transaction: BudgetTransaction)
-
+    suspend fun upsertTransaction(transaction: BudgetTransaction)
     fun getTransactions(): Flow<List<BudgetTransaction>>
+    fun deleteTransaction(id: Long)
 }

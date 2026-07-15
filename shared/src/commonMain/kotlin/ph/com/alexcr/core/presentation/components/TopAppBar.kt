@@ -1,8 +1,12 @@
 package ph.com.alexcr.core.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
@@ -19,29 +23,52 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import ph.com.alexcr.core.presentation.theme.BudgetTrackerTheme
+import ph.com.alexcr.core.presentation.theme.primaryLight
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CenterAlignedTopAppBar(
+fun Titlebar(
     modifier: Modifier = Modifier,
-    title: String,
-    colors: TopAppBarColors = TopAppBarDefaults.centerAlignedTopAppBarColors(),
-    navigation: @Composable () -> Unit = {},
-    action: @Composable () -> Unit = {}
-) {
-    CenterAlignedTopAppBar(
-        title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium
-            )
-        },
-        navigationIcon = { navigation() },
-        actions = { action() },
-        colors = colors,
-        modifier = modifier
-    )
+    text: String,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+    subtext: String? = null,
+    header: @Composable () -> Unit = {}
+){
+    Column {
+        CenterAlignedTopAppBar(
+            modifier = modifier,
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = primaryLight,
+                titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            title = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    subtext?.let {
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
+                    }
+                }
+
+            },
+            navigationIcon = navigationIcon,
+            actions = actions
+        )
+        header()
+    }
 }
 
 @Composable
@@ -67,14 +94,13 @@ fun GenericTopAppBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
-private fun CenterAlignedTopAppBarPreview() {
+private fun TitlebarPreview() {
     BudgetTrackerTheme {
-        CenterAlignedTopAppBar(
-            title = "Untitled",
-            navigation = {
+        Titlebar(
+            text = "Titlebar",
+            navigationIcon = {
                 IconButton(onClick = {}) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -82,7 +108,7 @@ private fun CenterAlignedTopAppBarPreview() {
                     )
                 }
             },
-            action = {
+            actions = {
                 IconButton(onClick = {}) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowForward,

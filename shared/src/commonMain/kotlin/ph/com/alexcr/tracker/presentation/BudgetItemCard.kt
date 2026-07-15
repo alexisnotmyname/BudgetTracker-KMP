@@ -21,10 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ph.com.alexcr.core.presentation.theme.surfaceVariantLight
+import ph.com.alexcr.core.presentation.util.formatAmount
+import ph.com.alexcr.core.presentation.util.iconForCategory
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
-import ph.com.alexcr.tracker.domain.model.BudgetItemType
-import ph.com.alexcr.tracker.domain.model.PaymentMethod
-import ph.com.alexcr.tracker.domain.model.expenseCategories
+import ph.com.alexcr.tracker.domain.model.defaultExpenseCategories
 
 @Composable
 fun BudgetItemCard(
@@ -32,9 +33,13 @@ fun BudgetItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isIncome = budgetTransaction.budgetItemType == BudgetItemType.INCOME
-    val amountText = if (isIncome) "+₱${budgetTransaction.amount}" else "-₱${budgetTransaction.amount}"
+    val isIncome = budgetTransaction is BudgetTransaction.Income
+    val amountText = if (isIncome) "+₱${formatAmount(budgetTransaction.amount)}" else "-₱${formatAmount(budgetTransaction.amount)}"
     val amountColor = if (isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
+    val paymentMethodLabel = when (budgetTransaction) {
+        is BudgetTransaction.Expense -> budgetTransaction.paymentMethod.label
+        is BudgetTransaction.Income -> ""
+    }
 
     Card(
         modifier = modifier
@@ -42,6 +47,7 @@ fun BudgetItemCard(
             .padding(4.dp),
         shape = RoundedCornerShape(size = 8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = surfaceVariantLight),
         onClick = { onClick() }
     ) {
         Row(
@@ -51,17 +57,17 @@ fun BudgetItemCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
-            // Column 1: Category + Notes
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = budgetTransaction.category.icon,
-                        contentDescription = budgetTransaction.category.name,
+                        imageVector = iconForCategory(budgetTransaction.category?.name),
+                        contentDescription = budgetTransaction.category?.name,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = budgetTransaction.category.name,
+                        text = budgetTransaction.category?.name ?: "",
                         style = MaterialTheme.typography.titleSmall
                     )
                 }
@@ -77,7 +83,6 @@ fun BudgetItemCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Column 2: Amount + Payment Method
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = amountText,
@@ -86,7 +91,7 @@ fun BudgetItemCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = budgetTransaction.paymentMethod.label,
+                    text = paymentMethodLabel,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -99,16 +104,13 @@ fun BudgetItemCard(
 @Composable
 @Preview
 fun BudgetItemCardPreview() {
-    val sampleBudgetTransaction = BudgetTransaction(
-        id = 1,
-        amount = 100.0,
-        category = expenseCategories.first(),
-        paymentMethod = PaymentMethod.CASH,
-        note = "Weekly grocery run",
-        budgetItemType = BudgetItemType.EXPENSE
-    )
     BudgetItemCard(
-        budgetTransaction = sampleBudgetTransaction,
+        budgetTransaction = BudgetTransaction.Expense(
+            id = 1,
+            amount = 100.0,
+            category = defaultExpenseCategories.first(),
+            note = "Weekly grocery run"
+        ),
         onClick = {}
     )
 }

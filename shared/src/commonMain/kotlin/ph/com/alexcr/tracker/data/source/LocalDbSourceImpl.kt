@@ -6,10 +6,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import ph.com.alexcr.tracker.database.BudgetTrackerDatabase
-import ph.com.alexcr.tracker.domain.model.BudgetItemType
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import ph.com.alexcr.tracker.domain.model.PaymentMethod
-import ph.com.alexcr.tracker.domain.model.expenseCategories
+import ph.com.alexcr.tracker.domain.model.TransactionCategory
 
 class LocalDbSourceImpl(
     database: BudgetTrackerDatabase
@@ -17,40 +16,62 @@ class LocalDbSourceImpl(
 
     private val query = database.budgetTrackerDatabaseQueries
 
-    override fun upsertExpense(transaction: BudgetTransaction) {
-
-        query.transaction{
-            query.insertBudgetTransaction(
-                amount = transaction.amount,
-                paymentMethod = transaction.paymentMethod.name,
-                category = transaction.category.name,
-                note = transaction.note,
-                budgetItemType = transaction.budgetItemType.label,
-                dateTimeCreated = transaction.dateTimeCreated,
-                dateTimeUpdated = transaction.dateTimeUpdated
-            )
-        }}
+    override suspend fun upsertTransaction(transaction: BudgetTransaction) {
+        query.transaction {
+            when (transaction) {
+                is BudgetTransaction.Expense -> query.insertBudgetTransaction(
+                    amount = transaction.amount,
+                    paymentMethod = transaction.paymentMethod.name,
+                    category = transaction.category?.name ?: "none",
+                    note = transaction.note,
+                    budgetItemType = "EXPENSE",
+                    dateTimeCreated = transaction.date,
+                    dateTimeUpdated = null
+                )
+                is BudgetTransaction.Income -> query.insertBudgetTransaction(
+                    amount = transaction.amount,
+                    paymentMethod = "none",
+                    category = transaction.category?.name ?: "none",
+                    note = transaction.note,
+                    budgetItemType = "INCOME",
+                    dateTimeCreated = transaction.date,
+                    dateTimeUpdated = null
+                )
+            }
+        }
+    }
 
     override fun getTransactions(): Flow<List<BudgetTransaction>> {
         return query.getAllBudgetTransactions()
             .asFlow()
             .mapToList(Dispatchers.Default)
-            .map {
-                it.map { transactionEntity ->
-                    BudgetTransaction(
-                        id = transactionEntity.id,
-                        amount = transactionEntity.amount,
-                        paymentMethod = PaymentMethod.valueOf(transactionEntity.paymentMethod),
-                        category = expenseCategories.firstOrNull { category -> category.name == transactionEntity.category } ?: expenseCategories.first(),
-                        note = transactionEntity.note,
-                        budgetItemType = BudgetItemType.valueOf(transactionEntity.budgetItemType),
-                        dateTimeCreated = transactionEntity.dateTimeCreated,
-                        dateTimeUpdated = transactionEntity.dateTimeUpdated
-                    )
+            .map { entities ->
+                entities.map { entity ->
+                    val category = if (entity.category == "none") null
+                                   else TransactionCategory(name = entity.category)
+                    if (entity.budgetItemType == "EXPENSE") {
+                        BudgetTransaction.Expense(
+                            id = entity.id,
+                            amount = entity.amount,
+                            paymentMethod = PaymentMethod.valueOf(entity.paymentMethod),
+                            category = category,
+                            note = entity.note,
+                            date = entity.dateTimeCreated
+                        )
+                    } else {
+                        BudgetTransaction.Income(
+                            id = entity.id,
+                            amount = entity.amount,
+                            category = category,
+                            note = entity.note,
+                            date = entity.dateTimeCreated
+                        )
+                    }
                 }
-
             }
     }
 
-
+    override fun deleteTransaction(id: Long) {
+        query.deleteBudgetTransaction(id)
+    }
 }

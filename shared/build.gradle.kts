@@ -45,7 +45,22 @@ kotlin {
        }
     }
     
+//    val webMain by creating {
+//        dependsOn(commonMain.get())
+//    }
+//
+//    jsMain {
+//        dependsOn(webMain)
+//    }
+//
+//    wasmJsMain {
+//        dependsOn(webMain)
+//    }
+
     sourceSets {
+        webMain.dependencies {
+            implementation(libs.sqldelight.web.worker.driver)
+        }
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.sqldelight.android.driver)
@@ -69,21 +84,19 @@ kotlin {
             api(libs.koin.core)
             implementation(libs.bundles.ktor)
 
-            implementation(libs.sqldelight.runtime)
-            implementation(libs.sqldelight.coroutines)
+            implementation(libs.sqldelight.coroutines.extensions)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
         iosMain.dependencies {
-            implementation(libs.sqldelight.native.driver)
+            implementation(libs.sqldelight.ios.driver)
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)
-            implementation(libs.sqldelight.web.worker.driver)
-        }
-        wasmJsMain.dependencies {
-            implementation(libs.sqldelight.web.worker.driver)
+            implementation(npm("@cashapp/sqldelight-sqljs-worker", libs.versions.sqldelight.get()))
+            implementation(npm("sql.js", "1.12.0"))
+            implementation(devNpm("copy-webpack-plugin", "12.0.2"))
         }
     }
 }
