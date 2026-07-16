@@ -10,6 +10,9 @@ data class BudgetListState(
     val budgetList: List<BudgetTransaction> = emptyList(),
     val expenseCategories: List<TransactionCategory> = defaultExpenseCategories,
     val incomeCategories: List<TransactionCategory> = defaultIncomeCategories,
+    val totalIncome: Double = 0.0,
+    val totalExpense: Double = 0.0,
+    val remainingBalance: Double = 0.0,
     val error: String = ""
 )
 

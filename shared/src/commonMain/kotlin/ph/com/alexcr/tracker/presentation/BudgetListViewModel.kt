@@ -29,9 +29,18 @@ class BudgetListViewModel(
     private fun getTransactionList() {
         transactionRepository.getTransactions()
             .onEach { transactions ->
+                val totalIncome = transactions
+                    .filterIsInstance<BudgetTransaction.Income>()
+                    .sumOf { it.amount }
+                val totalExpense = transactions
+                    .filterIsInstance<BudgetTransaction.Expense>()
+                    .sumOf { it.amount }
                 _state.update {
                     it.copy(
-                        budgetList = transactions
+                        budgetList = transactions,
+                        totalIncome = totalIncome,
+                        totalExpense = totalExpense,
+                        remainingBalance = totalIncome - totalExpense
                     )
                 }
             }

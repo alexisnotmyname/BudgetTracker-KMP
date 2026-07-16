@@ -57,6 +57,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.em
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import budget.shared.generated.resources.add_item
 import budget.shared.generated.resources.cancel
 import budget.shared.generated.resources.confirm_delete
 import budget.shared.generated.resources.edit
@@ -73,6 +74,7 @@ import ph.com.alexcr.tracker.domain.model.defaultIncomeCategories
 import ph.com.alexcr.tracker.presentation.components.BudgetItemCard
 import ph.com.alexcr.tracker.presentation.components.InputExpense
 import ph.com.alexcr.tracker.presentation.components.InputIncome
+import ph.com.alexcr.tracker.presentation.components.BalanceSummaryCard
 
 @Composable
 fun BudgetListScreenRoot(
@@ -112,23 +114,34 @@ fun BudgetListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
-                    contentDescription = "Add Item"
+                    contentDescription = stringResource(Res.string.add_item)
                 )
             }
         }
     ) { paddingValues ->
         if (state.budgetList.isEmpty()) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp),
             ) {
-                Text(
-                    text = stringResource(Res.string.no_transactions_yet_add_one),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                BalanceSummaryCard(
+                    totalIncome = state.totalIncome,
+                    totalExpense = state.totalExpense,
+                    remainingBalance = state.remainingBalance
                 )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(Res.string.no_transactions_yet_add_one),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         } else {
             val groupedTransactions = remember(state.budgetList) {
@@ -143,6 +156,14 @@ fun BudgetListScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
+                item {
+                    BalanceSummaryCard(
+                        totalIncome = state.totalIncome,
+                        totalExpense = state.totalExpense,
+                        remainingBalance = state.remainingBalance,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
                 groupedTransactions.forEach { (_, transactionsForDate) ->
                     val firstItem = transactionsForDate.first()
                     stickyHeader(key = "header_${formatDateKey(firstItem.dateTimeCreated)}") {
