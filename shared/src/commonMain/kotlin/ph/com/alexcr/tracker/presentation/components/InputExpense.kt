@@ -153,6 +153,7 @@ fun InputExpense(
     ) {
         onBudgetItemChange(
             BudgetTransaction.Expense(
+                id = initialTransaction?.id ?: 0L,
                 amount = finalAmount,
                 paymentMethod = selectedPaymentMethod,
                 category = selectedCategory,

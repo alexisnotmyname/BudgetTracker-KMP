@@ -29,7 +29,6 @@ class BudgetListViewModel(
     private fun getTransactionList() {
         transactionRepository.getTransactions()
             .onEach { transactions ->
-                println("Transactions: $transactions")
                 _state.update {
                     it.copy(
                         budgetList = transactions

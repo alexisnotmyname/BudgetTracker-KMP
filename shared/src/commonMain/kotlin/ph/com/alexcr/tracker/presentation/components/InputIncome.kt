@@ -139,6 +139,7 @@ fun InputIncome(
     ) {
         onBudgetItemChange(
             BudgetTransaction.Income(
+                id = initialTransaction?.id ?: 0L,
                 amount = finalAmount,
                 category = selectedCategory,
                 note = notes,
