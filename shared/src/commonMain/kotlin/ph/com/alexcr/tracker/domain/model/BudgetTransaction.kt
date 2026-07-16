@@ -5,14 +5,16 @@ sealed class BudgetTransaction {
     abstract val amount: Double
     abstract val category: TransactionCategory?
     abstract val note: String
-    abstract val date: Long?
+    abstract val dateTimeCreated: Long?
+    abstract val dateTimeUpdated: Long?
 
     data class Expense(
         override val id: Long = 0,
         override val amount: Double = 0.0,
         override val category: TransactionCategory? = null,
         override val note: String = "",
-        override val date: Long? = null,
+        override val dateTimeCreated: Long? = null,
+        override val dateTimeUpdated: Long? = null,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     ) : BudgetTransaction()
 
@@ -21,6 +23,7 @@ sealed class BudgetTransaction {
         override val amount: Double = 0.0,
         override val category: TransactionCategory? = null,
         override val note: String = "",
-        override val date: Long? = null,
+        override val dateTimeCreated: Long? = null,
+        override val dateTimeUpdated: Long? = null,
     ) : BudgetTransaction()
 }

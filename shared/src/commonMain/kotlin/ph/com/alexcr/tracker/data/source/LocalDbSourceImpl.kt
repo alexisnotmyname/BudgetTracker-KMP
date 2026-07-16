@@ -9,6 +9,7 @@ import ph.com.alexcr.tracker.database.BudgetTrackerDatabase
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import ph.com.alexcr.tracker.domain.model.PaymentMethod
 import ph.com.alexcr.tracker.domain.model.TransactionCategory
+import kotlin.time.Clock
 
 class LocalDbSourceImpl(
     database: BudgetTrackerDatabase
@@ -16,7 +17,7 @@ class LocalDbSourceImpl(
 
     private val query = database.budgetTrackerDatabaseQueries
 
-    override suspend fun upsertTransaction(transaction: BudgetTransaction) {
+    override suspend fun insertTransaction(transaction: BudgetTransaction) {
         query.transaction {
             when (transaction) {
                 is BudgetTransaction.Expense -> query.insertBudgetTransaction(
@@ -25,8 +26,8 @@ class LocalDbSourceImpl(
                     category = transaction.category?.name ?: "none",
                     note = transaction.note,
                     budgetItemType = "EXPENSE",
-                    dateTimeCreated = transaction.date,
-                    dateTimeUpdated = null
+                    dateTimeCreated = transaction.dateTimeCreated,
+                    dateTimeUpdated = transaction.dateTimeUpdated
                 )
                 is BudgetTransaction.Income -> query.insertBudgetTransaction(
                     amount = transaction.amount,
@@ -34,8 +35,34 @@ class LocalDbSourceImpl(
                     category = transaction.category?.name ?: "none",
                     note = transaction.note,
                     budgetItemType = "INCOME",
-                    dateTimeCreated = transaction.date,
-                    dateTimeUpdated = null
+                    dateTimeCreated = transaction.dateTimeCreated,
+                    dateTimeUpdated = transaction.dateTimeUpdated
+                )
+            }
+        }
+    }
+
+    override suspend fun updateTransaction(transaction: BudgetTransaction) {
+        val now = Clock.System.now().toEpochMilliseconds()
+        query.transaction {
+            when (transaction) {
+                is BudgetTransaction.Expense -> query.updateBudgetTransaction(
+                    id = transaction.id,
+                    amount = transaction.amount,
+                    paymentMethod = transaction.paymentMethod.name,
+                    category = transaction.category?.name ?: "none",
+                    note = transaction.note,
+                    budgetItemType = "EXPENSE",
+                    dateTimeUpdated = now
+                )
+                is BudgetTransaction.Income -> query.updateBudgetTransaction(
+                    id = transaction.id,
+                    amount = transaction.amount,
+                    paymentMethod = "none",
+                    category = transaction.category?.name ?: "none",
+                    note = transaction.note,
+                    budgetItemType = "INCOME",
+                    dateTimeUpdated = now
                 )
             }
         }
@@ -56,7 +83,8 @@ class LocalDbSourceImpl(
                             paymentMethod = PaymentMethod.valueOf(entity.paymentMethod),
                             category = category,
                             note = entity.note,
-                            date = entity.dateTimeCreated
+                            dateTimeCreated = entity.dateTimeCreated,
+                            dateTimeUpdated = entity.dateTimeUpdated
                         )
                     } else {
                         BudgetTransaction.Income(
@@ -64,7 +92,8 @@ class LocalDbSourceImpl(
                             amount = entity.amount,
                             category = category,
                             note = entity.note,
-                            date = entity.dateTimeCreated
+                            dateTimeCreated = entity.dateTimeCreated,
+                            dateTimeUpdated = entity.dateTimeUpdated
                         )
                     }
                 }

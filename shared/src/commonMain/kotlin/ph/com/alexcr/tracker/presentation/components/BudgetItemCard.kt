@@ -1,4 +1,4 @@
-package ph.com.alexcr.tracker.presentation
+package ph.com.alexcr.tracker.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ph.com.alexcr.core.presentation.theme.surfaceVariantLight
 import ph.com.alexcr.core.presentation.util.formatAmount
+import ph.com.alexcr.core.presentation.util.formatDateTime
 import ph.com.alexcr.core.presentation.util.iconForCategory
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import ph.com.alexcr.tracker.domain.model.defaultExpenseCategories
@@ -67,15 +68,24 @@ fun BudgetItemCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = budgetTransaction.category?.name ?: "",
+                        text = budgetTransaction.note.ifBlank { budgetTransaction.category?.name ?: "" },
                         style = MaterialTheme.typography.titleSmall
                     )
                 }
                 if (budgetTransaction.note.isNotBlank()) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = budgetTransaction.note,
+                        text = budgetTransaction.category?.name ?: "",
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                val dateText = formatDateTime(budgetTransaction.dateTimeCreated)
+                if (dateText.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = dateText,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

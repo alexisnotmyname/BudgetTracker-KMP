@@ -14,7 +14,7 @@ class TransactionRepositoryImpl(
 
     override suspend fun addTransaction(transaction: BudgetTransaction): Result<Unit> {
         return try {
-            localDbSource.upsertTransaction(transaction)
+            localDbSource.insertTransaction(transaction)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -22,7 +22,7 @@ class TransactionRepositoryImpl(
     }
 
     override suspend fun updateTransaction(transaction: BudgetTransaction) {
-
+        localDbSource.updateTransaction(transaction)
     }
 
     override suspend fun deleteTransaction(transaction: BudgetTransaction) {

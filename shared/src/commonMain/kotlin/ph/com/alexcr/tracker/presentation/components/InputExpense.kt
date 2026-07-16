@@ -69,6 +69,7 @@ import kotlin.time.Instant
 fun InputExpense(
     categories: List<TransactionCategory>,
     modifier: Modifier = Modifier,
+    initialTransaction: BudgetTransaction.Expense? = null,
     onBudgetItemChange: (BudgetTransaction.Expense) -> Unit = {},
     onSave: (BudgetTransaction.Expense) -> Unit = {}
 ) {
@@ -78,17 +79,42 @@ fun InputExpense(
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var isAmountFocused by remember { mutableStateOf(false) }
-    var selectedPaymentMethod by remember { mutableStateOf(PaymentMethod.CASH) }
-    var notes by remember { mutableStateOf("") }
+    var selectedPaymentMethod by remember {
+        mutableStateOf(initialTransaction?.paymentMethod ?: PaymentMethod.CASH)
+    }
+    var notes by remember { mutableStateOf(initialTransaction?.note ?: "") }
     var selectedCategory by remember(categories) {
-        mutableStateOf(categories.firstOrNull() ?: TransactionCategory(name = ""))
+        mutableStateOf(
+            initialTransaction?.category
+                ?: categories.firstOrNull()
+                ?: TransactionCategory(name = "")
+        )
     }
 
-    var integerPart by remember { mutableStateOf("") }
-    var decimalPart by remember { mutableStateOf<String?>(null) }
-    var isDecimalMode by remember { mutableStateOf(false) }
+    val (initInteger, initDecimal, initDecimalMode) = remember(initialTransaction) {
+        val amount = initialTransaction?.amount ?: 0.0
+        if (amount == 0.0) {
+            Triple("", null as String?, false)
+        } else {
+            val str = amount.toString()
+            val parts = str.split(".")
+            val intPart = if (parts[0] == "0") "" else parts[0]
+            val decPart = parts.getOrNull(1)?.trimEnd('0')
+            if (decPart.isNullOrEmpty()) {
+                Triple(intPart, null as String?, false)
+            } else {
+                Triple(intPart, decPart, true)
+            }
+        }
+    }
 
-    val datePickerState = rememberDatePickerState()
+    var integerPart by remember { mutableStateOf(initInteger) }
+    var decimalPart by remember { mutableStateOf<String?>(initDecimal) }
+    var isDecimalMode by remember { mutableStateOf(initDecimalMode) }
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialTransaction?.dateTimeCreated
+    )
     val selectedDate = datePickerState.selectedDateMillis?.let {
         val local = Instant.fromEpochMilliseconds(it)
             .toLocalDateTime(TimeZone.currentSystemDefault())
@@ -131,7 +157,7 @@ fun InputExpense(
                 paymentMethod = selectedPaymentMethod,
                 category = selectedCategory,
                 note = notes,
-                date = datePickerState.selectedDateMillis
+                dateTimeCreated = datePickerState.selectedDateMillis
             )
         )
     }
@@ -356,11 +382,12 @@ fun InputExpense(
             onClick = {
                 onSave(
                     BudgetTransaction.Expense(
+                        id = initialTransaction?.id ?: 0L,
                         amount = finalAmount,
                         paymentMethod = selectedPaymentMethod,
                         category = selectedCategory,
                         note = notes,
-                        date = datePickerState.selectedDateMillis
+                        dateTimeCreated = datePickerState.selectedDateMillis,
                     )
                 )
             }

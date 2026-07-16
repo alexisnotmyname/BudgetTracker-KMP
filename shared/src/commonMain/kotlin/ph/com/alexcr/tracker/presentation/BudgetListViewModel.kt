@@ -55,6 +55,12 @@ class BudgetListViewModel(
                     transactionRepository.deleteTransaction(action.budgetTransaction)
                 }
             }
+
+            is BudgetTransactionAction.OnEditTransaction -> {
+                viewModelScope.launch {
+                    transactionRepository.updateTransaction(action.budgetTransaction)
+                }
+            }
         }
     }
 }

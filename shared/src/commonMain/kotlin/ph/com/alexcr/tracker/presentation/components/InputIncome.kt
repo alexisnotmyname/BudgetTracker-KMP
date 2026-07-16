@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,8 @@ import kotlin.time.Instant
 fun InputIncome(
     categories: List<TransactionCategory>,
     modifier: Modifier = Modifier,
+    initialTransaction: BudgetTransaction.Income? = null,
+    onBudgetItemChange: (BudgetTransaction.Income) -> Unit = {},
     onSave: (BudgetTransaction.Income) -> Unit = {}
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -67,14 +70,38 @@ fun InputIncome(
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedCategory by remember(categories) {
-        mutableStateOf(categories.firstOrNull() ?: TransactionCategory(name = ""))
+        mutableStateOf(
+            initialTransaction?.category
+                ?: categories.firstOrNull()
+                ?: TransactionCategory(name = "")
+        )
     }
-    var notes by remember { mutableStateOf("") }
-    var integerPart by remember { mutableStateOf("") }
-    var decimalPart by remember { mutableStateOf<String?>(null) }
-    var isDecimalMode by remember { mutableStateOf(false) }
+    var notes by remember { mutableStateOf(initialTransaction?.note ?: "") }
 
-    val datePickerState = rememberDatePickerState()
+    val (initInteger, initDecimal, initDecimalMode) = remember(initialTransaction) {
+        val amount = initialTransaction?.amount ?: 0.0
+        if (amount == 0.0) {
+            Triple("", null as String?, false)
+        } else {
+            val str = amount.toString()
+            val parts = str.split(".")
+            val intPart = if (parts[0] == "0") "" else parts[0]
+            val decPart = parts.getOrNull(1)?.trimEnd('0')
+            if (decPart.isNullOrEmpty()) {
+                Triple(intPart, null as String?, false)
+            } else {
+                Triple(intPart, decPart, true)
+            }
+        }
+    }
+
+    var integerPart by remember { mutableStateOf(initInteger) }
+    var decimalPart by remember { mutableStateOf<String?>(initDecimal) }
+    var isDecimalMode by remember { mutableStateOf(initDecimalMode) }
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialTransaction?.dateTimeCreated
+    )
     val selectedDate = datePickerState.selectedDateMillis?.let {
         val local = Instant.fromEpochMilliseconds(it)
             .toLocalDateTime(TimeZone.currentSystemDefault())
@@ -102,6 +129,22 @@ fun InputIncome(
                 append((decimalPart ?: "").padEnd(2, '0'))
             }
         }.toDoubleOrNull() ?: 0.0
+    }
+
+    LaunchedEffect(
+        finalAmount,
+        selectedCategory,
+        notes,
+        datePickerState.selectedDateMillis
+    ) {
+        onBudgetItemChange(
+            BudgetTransaction.Income(
+                amount = finalAmount,
+                category = selectedCategory,
+                note = notes,
+                dateTimeCreated = datePickerState.selectedDateMillis
+            )
+        )
     }
 
     Column(
@@ -281,10 +324,11 @@ fun InputIncome(
             onClick = {
                 onSave(
                     BudgetTransaction.Income(
+                        id = initialTransaction?.id ?: 0L,
                         amount = finalAmount,
                         category = selectedCategory,
                         note = notes,
-                        date = datePickerState.selectedDateMillis
+                        dateTimeCreated = datePickerState.selectedDateMillis,
                     )
                 )
             }

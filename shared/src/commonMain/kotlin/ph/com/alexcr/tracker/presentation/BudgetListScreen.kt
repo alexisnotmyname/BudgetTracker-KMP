@@ -38,7 +38,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,11 +54,13 @@ import ph.com.alexcr.core.presentation.theme.BudgetTrackerTheme
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import budget.shared.generated.resources.edit
 import org.koin.compose.viewmodel.koinViewModel
 import ph.com.alexcr.core.presentation.components.Titlebar
 import ph.com.alexcr.tracker.domain.model.TransactionCategory
 import ph.com.alexcr.tracker.domain.model.defaultExpenseCategories
 import ph.com.alexcr.tracker.domain.model.defaultIncomeCategories
+import ph.com.alexcr.tracker.presentation.components.BudgetItemCard
 import ph.com.alexcr.tracker.presentation.components.InputExpense
 import ph.com.alexcr.tracker.presentation.components.InputIncome
 
@@ -94,7 +95,10 @@ fun BudgetListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showBottomSheet = true }
+                onClick = {
+                    selectedTransaction = null
+                    showBottomSheet = true
+                }
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -164,7 +168,8 @@ fun BudgetListScreen(
                         BudgetItemCard(
                             budgetTransaction = item,
                             onClick = {
-                                // Handle item click if needed
+                                selectedTransaction = item
+                                showBottomSheet = true
                             }
                         )
                     }
@@ -183,11 +188,16 @@ fun BudgetListScreen(
             dragHandle = null
         ) {
             AddTransactionModal(
+                currentBudgetTransaction = selectedTransaction,
                 expenseCategories = state.expenseCategories,
                 incomeCategories = state.incomeCategories,
                 onCancel = { showBottomSheet = false },
                 onSave = { newItem ->
-                    onAction(BudgetTransactionAction.OnAddTransaction(newItem))
+                    if (selectedTransaction != null) {
+                        onAction(BudgetTransactionAction.OnEditTransaction(newItem))
+                    } else {
+                        onAction(BudgetTransactionAction.OnAddTransaction(newItem))
+                    }
                     showBottomSheet = false
                 }
             )
@@ -228,21 +238,29 @@ fun BudgetListScreen(
 @Composable
 fun AddTransactionModal(
     modifier: Modifier = Modifier,
+    currentBudgetTransaction: BudgetTransaction? = null,
     expenseCategories: List<TransactionCategory>,
     incomeCategories: List<TransactionCategory>,
     onCancel: () -> Unit = {},
     onSave: (BudgetTransaction) -> Unit = {}
 ) {
     val tabs = remember { listOf("Expense", "Income", "Transfer") }
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val initialPage = remember(currentBudgetTransaction) {
+        when (currentBudgetTransaction) {
+            is BudgetTransaction.Income -> 1
+            else -> 0
+        }
+    }
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
-    var currentBudgetTransaction by remember { mutableStateOf<BudgetTransaction>(BudgetTransaction.Expense()) }
+    val isEditMode = currentBudgetTransaction != null
+    var currentBudgetTransaction by remember { mutableStateOf(currentBudgetTransaction) }
 
     Scaffold(
         topBar = {
             Titlebar(
-                text = stringResource(Res.string.add),
+                text = if (isEditMode) stringResource(Res.string.edit) else stringResource(Res.string.add),
                 navigationIcon = {
                     IconButton(
                         onClick = { onCancel() }
@@ -255,7 +273,7 @@ fun AddTransactionModal(
                 },
                 actions = {
                     IconButton(
-                        onClick = { onSave(currentBudgetTransaction) }
+                        onClick = { currentBudgetTransaction?.let { onSave(it) } }
                     ) {
                         Text(
                             text = stringResource(Res.string.save),
@@ -304,6 +322,7 @@ fun AddTransactionModal(
                             InputExpense(
                                 modifier = Modifier.fillMaxSize(),
                                 categories = expenseCategories,
+                                initialTransaction = currentBudgetTransaction as? BudgetTransaction.Expense,
                                 onBudgetItemChange = { currentBudgetTransaction = it },
                                 onSave = { onSave(it) }
                             )
@@ -315,6 +334,8 @@ fun AddTransactionModal(
                             modifier = Modifier
                                 .fillMaxSize(),
                             categories = incomeCategories,
+                            initialTransaction = currentBudgetTransaction as? BudgetTransaction.Income,
+                            onBudgetItemChange = { currentBudgetTransaction = it },
                             onSave = { onSave(it) }
                         )
                     }
@@ -341,13 +362,15 @@ fun BudgetListScreenPreview() {
                         amount = 100.0,
                         category = defaultExpenseCategories.first(),
                         note = "Groceries",
-                        date = 0L
+                        dateTimeCreated = 0L,
+                        dateTimeUpdated = 0L
                     ),
                     BudgetTransaction.Expense(
                         amount = 200.0,
                         category = defaultIncomeCategories.first(),
                         note = "Utilities",
-                        date = 0L
+                        dateTimeCreated = 0L,
+                        dateTimeUpdated = 0L
                     )
                 ),
                 error = ""

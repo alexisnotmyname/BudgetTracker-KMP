@@ -16,5 +16,6 @@ data class BudgetListState(
 sealed interface BudgetTransactionAction {
     data object OnQueryTransaction: BudgetTransactionAction
     data class OnAddTransaction(val budgetTransaction: BudgetTransaction): BudgetTransactionAction
+    data class OnEditTransaction(val budgetTransaction: BudgetTransaction): BudgetTransactionAction
     data class OnDeleteTransaction(val budgetTransaction: BudgetTransaction): BudgetTransactionAction
 }

@@ -10,7 +10,7 @@ CREATE TABLE BudgetTransactionEntity (
 );
 
 getAllBudgetTransactions:
-SELECT * FROM BudgetTransactionEntity ORDER BY dateTimeCreated DESC;
+SELECT * FROM BudgetTransactionEntity ORDER BY dateTimeCreated ASC;
 
 insertBudgetTransaction:
 INSERT INTO BudgetTransactionEntity(amount, paymentMethod, category, note, budgetItemType, dateTimeCreated, dateTimeUpdated)
