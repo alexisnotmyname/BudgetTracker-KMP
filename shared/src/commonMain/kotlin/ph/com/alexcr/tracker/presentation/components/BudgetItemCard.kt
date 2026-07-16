@@ -23,7 +23,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ph.com.alexcr.core.presentation.theme.surfaceVariantLight
 import ph.com.alexcr.core.presentation.util.formatAmount
-import ph.com.alexcr.core.presentation.util.formatDateTime
 import ph.com.alexcr.core.presentation.util.iconForCategory
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import ph.com.alexcr.tracker.domain.model.defaultExpenseCategories
@@ -77,15 +76,6 @@ fun BudgetItemCard(
                     Text(
                         text = budgetTransaction.category?.name ?: "",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                val dateText = formatDateTime(budgetTransaction.dateTimeCreated)
-                if (dateText.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = dateText,
-                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

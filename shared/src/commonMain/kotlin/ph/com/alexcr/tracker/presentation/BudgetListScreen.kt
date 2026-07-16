@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -30,7 +30,6 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
@@ -51,11 +50,22 @@ import budget.shared.generated.resources.save
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import ph.com.alexcr.core.presentation.theme.BudgetTrackerTheme
+import ph.com.alexcr.core.presentation.util.formatDateHeader
+import ph.com.alexcr.core.presentation.util.formatDateKey
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.em
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import budget.shared.generated.resources.cancel
+import budget.shared.generated.resources.confirm_delete
 import budget.shared.generated.resources.edit
+import budget.shared.generated.resources.no_transactions_yet_add_one
+import budget.shared.generated.resources.yes
 import org.koin.compose.viewmodel.koinViewModel
+import ph.com.alexcr.core.presentation.components.BaseAlertDialog
+import ph.com.alexcr.core.presentation.components.GenericButton
+import ph.com.alexcr.core.presentation.components.TextButton
 import ph.com.alexcr.core.presentation.components.Titlebar
 import ph.com.alexcr.tracker.domain.model.TransactionCategory
 import ph.com.alexcr.tracker.domain.model.defaultExpenseCategories
@@ -115,12 +125,16 @@ fun BudgetListScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No items yet. Tap + to add one.",
+                    text = stringResource(Res.string.no_transactions_yet_add_one),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else {
+            val groupedTransactions = remember(state.budgetList) {
+                state.budgetList.groupBy { formatDateKey(it.dateTimeCreated) }
+                    .entries.sortedByDescending { it.key }
+            }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -129,49 +143,63 @@ fun BudgetListScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-                items(state.budgetList, key = { it.id }) { item ->
-                    val scope = rememberCoroutineScope()
-                    val swipeToDismissBoxState = rememberSwipeToDismissBoxState(
-                        initialValue = SwipeToDismissBoxValue.Settled,
-                        positionalThreshold = { totalDistance -> totalDistance * 0.3f }
-                    )
-                    LaunchedEffect(swipeToDismissBoxState.currentValue) {
-                        if (swipeToDismissBoxState.currentValue == SwipeToDismissBoxValue.EndToStart) {
-                            selectedTransaction = item
-                            pendingSwipeReset = { scope.launch { swipeToDismissBoxState.reset() } }
-                            showDeleteConfirmDialog = true
-                        }
-                    }
-                    SwipeToDismissBox(
-                        state = swipeToDismissBoxState,
-                        enableDismissFromStartToEnd = false,
-                        backgroundContent = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(4.dp)
-                                    .background(
-                                        color = Color.Red,
-                                        shape = RoundedCornerShape(8.dp)
-                                    ),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
-                                    tint = Color.White,
-                                    modifier = Modifier.padding(end = 20.dp)
-                                )
-                            }
-                        }
-                    ) {
-                        BudgetItemCard(
-                            budgetTransaction = item,
-                            onClick = {
-                                selectedTransaction = item
-                                showBottomSheet = true
-                            }
+                groupedTransactions.forEach { (_, transactionsForDate) ->
+                    val firstItem = transactionsForDate.first()
+                    stickyHeader(key = "header_${formatDateKey(firstItem.dateTimeCreated)}") {
+                        Text(
+                            text = formatDateHeader(firstItem.dateTimeCreated),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(vertical = 4.dp)
                         )
+                    }
+                    items(transactionsForDate, key = { it.id }) { item ->
+                        val scope = rememberCoroutineScope()
+                        val swipeToDismissBoxState = rememberSwipeToDismissBoxState(
+                            initialValue = SwipeToDismissBoxValue.Settled,
+                            positionalThreshold = { totalDistance -> totalDistance * 0.3f }
+                        )
+                        LaunchedEffect(swipeToDismissBoxState.currentValue) {
+                            if (swipeToDismissBoxState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+                                selectedTransaction = item
+                                pendingSwipeReset = { scope.launch { swipeToDismissBoxState.reset() } }
+                                showDeleteConfirmDialog = true
+                            }
+                        }
+                        SwipeToDismissBox(
+                            state = swipeToDismissBoxState,
+                            enableDismissFromStartToEnd = false,
+                            backgroundContent = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(4.dp)
+                                        .background(
+                                            color = Color.Red,
+                                            shape = RoundedCornerShape(8.dp)
+                                        ),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete",
+                                        tint = Color.White,
+                                        modifier = Modifier.padding(end = 20.dp)
+                                    )
+                                }
+                            }
+                        ) {
+                            BudgetItemCard(
+                                budgetTransaction = item,
+                                onClick = {
+                                    selectedTransaction = item
+                                    showBottomSheet = true
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -205,31 +233,54 @@ fun BudgetListScreen(
     }
 
     if(showDeleteConfirmDialog) {
-        AlertDialog(
+        BaseAlertDialog(
+            title = {
+                Text(
+                    text = "Confirm Delete",
+                    style = MaterialTheme.typography.labelLarge,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 1.1.em,
+                    maxLines = 5,
+                )
+            },
+            content = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(Res.string.confirm_delete),
+                        lineHeight = 1.2.em,
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFF727F93)
+                    )
+                }
+            },
+            positiveButton = {
+                GenericButton(
+                    text = stringResource(Res.string.yes),
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        selectedTransaction?.let { onAction(BudgetTransactionAction.OnDeleteTransaction(it)) }
+                        pendingSwipeReset = null  // no reset — item is being deleted
+                        showDeleteConfirmDialog = false
+                    }
+                )
+            },
+            negativeButton = {
+                TextButton(
+                    text = stringResource(Res.string.cancel),
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        pendingSwipeReset?.invoke()
+                        pendingSwipeReset = null
+                        showDeleteConfirmDialog = false
+                    }
+                )
+            },
             onDismissRequest = {
                 pendingSwipeReset?.invoke()
                 pendingSwipeReset = null
                 showDeleteConfirmDialog = false
-            },
-            title = {
-                Text(text = "Confirm Delete")
-            },
-            text = {
-                Text("Are you sure you want to delete transaction?")
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedTransaction?.let { onAction(BudgetTransactionAction.OnDeleteTransaction(it)) }
-                    pendingSwipeReset = null  // no reset — item is being deleted
-                    showDeleteConfirmDialog = false
-                }) { Text("Yes") }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    pendingSwipeReset?.invoke()  // ← snaps card back
-                    pendingSwipeReset = null
-                    showDeleteConfirmDialog = false
-                }) { Text("No") }
             }
         )
     }

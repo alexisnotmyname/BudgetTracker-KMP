@@ -3,7 +3,6 @@ package ph.com.alexcr.core.presentation.components
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
@@ -43,6 +42,35 @@ fun GenericButton(
             modifier = Modifier.fillMaxWidth().padding(8.dp),
             textAlign = TextAlign.Center,
             text = text,
+            style = MaterialTheme.typography.labelLarge
+        )
+    }
+}
+
+@Composable
+fun TextButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: ButtonColors = ButtonDefaults.buttonColors(
+        containerColor = Color.White,
+        contentColor = primaryLight,
+        disabledContentColor = Color.White,
+        disabledContainerColor = primaryLight.copy(alpha = 0.5f)
+    ),
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    onClick: () -> Unit = {},
+) {
+    Button(
+        onClick = { onClick() },
+        modifier = modifier,
+        colors = colors,
+        enabled = enabled,
+        contentPadding = contentPadding
+    ) {
+        Text(
+            text = text,
+            textAlign = TextAlign.Center,
             style = MaterialTheme.typography.labelLarge
         )
     }

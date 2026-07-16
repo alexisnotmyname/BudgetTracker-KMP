@@ -11,7 +11,6 @@ import ph.com.alexcr.tracker.presentation.BudgetListScreenRoot
 @Preview
 fun App() {
     BudgetTrackerTheme {
-        var showContent by remember { mutableStateOf(false) }
         BudgetListScreenRoot()
     }
 }
