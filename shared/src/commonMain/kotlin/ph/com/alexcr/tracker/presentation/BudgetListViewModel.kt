@@ -69,6 +69,10 @@ class BudgetListViewModel(
                     transactionRepository.updateTransaction(action.budgetTransaction)
                 }
             }
+
+            is BudgetTransactionAction.OnSelectTransaction -> {
+                _state.update { it.copy(selectedTransaction = action.transaction) }
+            }
         }
     }
 }

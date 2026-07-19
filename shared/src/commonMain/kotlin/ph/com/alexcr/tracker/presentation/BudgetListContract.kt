@@ -8,6 +8,7 @@ import ph.com.alexcr.tracker.domain.model.defaultIncomeCategories
 data class BudgetListState(
     val isLoading: Boolean = false,
     val budgetList: List<BudgetTransaction> = emptyList(),
+    val selectedTransaction: BudgetTransaction? = null,
     val expenseCategories: List<TransactionCategory> = defaultExpenseCategories,
     val incomeCategories: List<TransactionCategory> = defaultIncomeCategories,
     val totalIncome: Double = 0.0,
@@ -21,4 +22,5 @@ sealed interface BudgetTransactionAction {
     data class OnAddTransaction(val budgetTransaction: BudgetTransaction): BudgetTransactionAction
     data class OnEditTransaction(val budgetTransaction: BudgetTransaction): BudgetTransactionAction
     data class OnDeleteTransaction(val budgetTransaction: BudgetTransaction): BudgetTransactionAction
+    data class OnSelectTransaction(val transaction: BudgetTransaction?): BudgetTransactionAction
 }

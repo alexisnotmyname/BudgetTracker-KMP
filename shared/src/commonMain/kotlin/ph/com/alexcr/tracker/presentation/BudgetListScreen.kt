@@ -1,38 +1,31 @@
 package ph.com.alexcr.tracker.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,50 +34,55 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import budget.shared.generated.resources.Res
-import budget.shared.generated.resources.add
-import budget.shared.generated.resources.budget_tracker
-import budget.shared.generated.resources.save
-import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.stringResource
-import ph.com.alexcr.core.presentation.theme.BudgetTrackerTheme
-import ph.com.alexcr.core.presentation.util.formatDateHeader
-import ph.com.alexcr.core.presentation.util.formatDateKey
-import ph.com.alexcr.tracker.domain.model.BudgetTransaction
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.em
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import budget.shared.generated.resources.Res
 import budget.shared.generated.resources.add_item
+import budget.shared.generated.resources.budget_tracker
 import budget.shared.generated.resources.cancel
 import budget.shared.generated.resources.confirm_delete
-import budget.shared.generated.resources.edit
 import budget.shared.generated.resources.no_transactions_yet_add_one
 import budget.shared.generated.resources.yes
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import ph.com.alexcr.core.presentation.components.BaseAlertDialog
 import ph.com.alexcr.core.presentation.components.GenericButton
 import ph.com.alexcr.core.presentation.components.TextButton
 import ph.com.alexcr.core.presentation.components.Titlebar
-import ph.com.alexcr.tracker.domain.model.TransactionCategory
+import ph.com.alexcr.core.presentation.theme.BudgetTrackerTheme
+import ph.com.alexcr.core.presentation.util.formatDateHeader
+import ph.com.alexcr.core.presentation.util.formatDateKey
+import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import ph.com.alexcr.tracker.domain.model.defaultExpenseCategories
 import ph.com.alexcr.tracker.domain.model.defaultIncomeCategories
-import ph.com.alexcr.tracker.presentation.components.BudgetItemCard
-import ph.com.alexcr.tracker.presentation.components.InputExpense
-import ph.com.alexcr.tracker.presentation.components.InputIncome
 import ph.com.alexcr.tracker.presentation.components.BalanceSummaryCard
+import ph.com.alexcr.tracker.presentation.components.BudgetItemCard
 
 @Composable
 fun BudgetListScreenRoot(
+    onNavigateToModal: (BudgetTransaction?) -> Unit,
     viewModel: BudgetListViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     BudgetListScreen(
         state = state,
-        onAction = viewModel::onAction
+        onAction = viewModel::onAction,
+        onNavigateToModal = { transaction ->
+            viewModel.onAction(BudgetTransactionAction.OnSelectTransaction(transaction))
+            onNavigateToModal(transaction)
+        }
     )
+}
+
+@Composable
+fun rememberKeyboardVisible(): Boolean {
+    val imeInsets = WindowInsets.ime
+    return imeInsets.getBottom(LocalDensity.current) > 0
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,13 +90,12 @@ fun BudgetListScreenRoot(
 fun BudgetListScreen(
     modifier: Modifier = Modifier,
     state: BudgetListState,
-    onAction: (BudgetTransactionAction) -> Unit
+    onAction: (BudgetTransactionAction) -> Unit,
+    onNavigateToModal: (BudgetTransaction?) -> Unit
 ) {
-    var showBottomSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var pendingSwipeReset by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var selectedTransaction by remember { mutableStateOf<BudgetTransaction?>(null) }
-    val sheetState = rememberModalBottomSheetState()
+    var transactionPendingDeletion by remember { mutableStateOf<BudgetTransaction?>(null) }
 
     Scaffold(
         modifier = modifier,
@@ -107,10 +104,7 @@ fun BudgetListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    selectedTransaction = null
-                    showBottomSheet = true
-                }
+                onClick = { onNavigateToModal(null) }
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -181,11 +175,11 @@ fun BudgetListScreen(
                         val scope = rememberCoroutineScope()
                         val swipeToDismissBoxState = rememberSwipeToDismissBoxState(
                             initialValue = SwipeToDismissBoxValue.Settled,
-                            positionalThreshold = { totalDistance -> totalDistance * 0.3f }
+                            positionalThreshold = { totalDistance -> totalDistance * 0.5f }
                         )
                         LaunchedEffect(swipeToDismissBoxState.currentValue) {
                             if (swipeToDismissBoxState.currentValue == SwipeToDismissBoxValue.EndToStart) {
-                                selectedTransaction = item
+                                transactionPendingDeletion = item
                                 pendingSwipeReset = { scope.launch { swipeToDismissBoxState.reset() } }
                                 showDeleteConfirmDialog = true
                             }
@@ -200,7 +194,7 @@ fun BudgetListScreen(
                                         .padding(4.dp)
                                         .background(
                                             color = Color.Red,
-                                            shape = RoundedCornerShape(8.dp)
+                                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                                         ),
                                     contentAlignment = Alignment.CenterEnd
                                 ) {
@@ -215,10 +209,7 @@ fun BudgetListScreen(
                         ) {
                             BudgetItemCard(
                                 budgetTransaction = item,
-                                onClick = {
-                                    selectedTransaction = item
-                                    showBottomSheet = true
-                                }
+                                onClick = { onNavigateToModal(item) }
                             )
                         }
                     }
@@ -227,33 +218,7 @@ fun BudgetListScreen(
         }
     }
 
-    if (showBottomSheet) {
-        ModalBottomSheet(
-            modifier = Modifier.fillMaxHeight(),
-            sheetState = sheetState,
-            shape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp),
-            onDismissRequest = { showBottomSheet = false },
-            containerColor = MaterialTheme.colorScheme.primary,
-            dragHandle = null
-        ) {
-            AddTransactionModal(
-                currentBudgetTransaction = selectedTransaction,
-                expenseCategories = state.expenseCategories,
-                incomeCategories = state.incomeCategories,
-                onCancel = { showBottomSheet = false },
-                onSave = { newItem ->
-                    if (selectedTransaction != null) {
-                        onAction(BudgetTransactionAction.OnEditTransaction(newItem))
-                    } else {
-                        onAction(BudgetTransactionAction.OnAddTransaction(newItem))
-                    }
-                    showBottomSheet = false
-                }
-            )
-        }
-    }
-
-    if(showDeleteConfirmDialog) {
+    if (showDeleteConfirmDialog) {
         BaseAlertDialog(
             title = {
                 Text(
@@ -281,8 +246,11 @@ fun BudgetListScreen(
                     text = stringResource(Res.string.yes),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        selectedTransaction?.let { onAction(BudgetTransactionAction.OnDeleteTransaction(it)) }
-                        pendingSwipeReset = null  // no reset — item is being deleted
+                        transactionPendingDeletion?.let {
+                            onAction(BudgetTransactionAction.OnDeleteTransaction(it))
+                        }
+                        pendingSwipeReset = null
+                        transactionPendingDeletion = null
                         showDeleteConfirmDialog = false
                     }
                 )
@@ -294,6 +262,7 @@ fun BudgetListScreen(
                     onClick = {
                         pendingSwipeReset?.invoke()
                         pendingSwipeReset = null
+                        transactionPendingDeletion = null
                         showDeleteConfirmDialog = false
                     }
                 )
@@ -301,124 +270,10 @@ fun BudgetListScreen(
             onDismissRequest = {
                 pendingSwipeReset?.invoke()
                 pendingSwipeReset = null
+                transactionPendingDeletion = null
                 showDeleteConfirmDialog = false
             }
         )
-    }
-}
-
-@Composable
-fun AddTransactionModal(
-    modifier: Modifier = Modifier,
-    currentBudgetTransaction: BudgetTransaction? = null,
-    expenseCategories: List<TransactionCategory>,
-    incomeCategories: List<TransactionCategory>,
-    onCancel: () -> Unit = {},
-    onSave: (BudgetTransaction) -> Unit = {}
-) {
-    val tabs = remember { listOf("Expense", "Income", "Transfer") }
-    val initialPage = remember(currentBudgetTransaction) {
-        when (currentBudgetTransaction) {
-            is BudgetTransaction.Income -> 1
-            else -> 0
-        }
-    }
-    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { tabs.size })
-    val coroutineScope = rememberCoroutineScope()
-
-    val isEditMode = currentBudgetTransaction != null
-    var currentBudgetTransaction by remember { mutableStateOf(currentBudgetTransaction) }
-
-    Scaffold(
-        topBar = {
-            Titlebar(
-                text = if (isEditMode) stringResource(Res.string.edit) else stringResource(Res.string.add),
-                navigationIcon = {
-                    IconButton(
-                        onClick = { onCancel() }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Cancel",
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = { currentBudgetTransaction?.let { onSave(it) } }
-                    ) {
-                        Text(
-                            text = stringResource(Res.string.save),
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                }
-            )
-        },
-    ) { padding ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(padding),
-            verticalArrangement = Arrangement.Top,
-        ) {
-            PrimaryTabRow(
-                selectedTabIndex = pagerState.currentPage,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                        text = { Text(text = title) }
-                    )
-                }
-            }
-
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
-                when (page) {
-                    0 -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(8.dp)
-                        ) {
-                            InputExpense(
-                                modifier = Modifier.fillMaxSize(),
-                                categories = expenseCategories,
-                                initialTransaction = currentBudgetTransaction as? BudgetTransaction.Expense,
-                                onBudgetItemChange = { currentBudgetTransaction = it },
-                                onSave = { onSave(it) }
-                            )
-                        }
-                    }
-
-                    1 -> {
-                        InputIncome(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            categories = incomeCategories,
-                            initialTransaction = currentBudgetTransaction as? BudgetTransaction.Income,
-                            onBudgetItemChange = { currentBudgetTransaction = it },
-                            onSave = { onSave(it) }
-                        )
-                    }
-
-                    2 -> {
-                        Text("Transfer")
-                    }
-                }
-            }
-        }
-
     }
 }
 
@@ -447,20 +302,8 @@ fun BudgetListScreenPreview() {
                 ),
                 error = ""
             ),
-            onAction = {}
-        )
-    }
-}
-
-@Composable
-@Preview
-fun AddTransactionModalPreview() {
-    BudgetTrackerTheme {
-        AddTransactionModal(
-            expenseCategories = defaultExpenseCategories,
-            incomeCategories = defaultIncomeCategories,
-            onCancel = {},
-            onSave = {}
+            onAction = {},
+            onNavigateToModal = {}
         )
     }
 }
