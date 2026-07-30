@@ -57,6 +57,7 @@ class LocalDbSourceImpl(
                     category = transaction.category?.name ?: "none",
                     note = transaction.note,
                     budgetItemType = "EXPENSE",
+                    dateTimeCreated = transaction.dateTimeCreated,
                     dateTimeUpdated = now,
                     remainingBalance = transaction.remainingBalance
                 )
@@ -67,6 +68,7 @@ class LocalDbSourceImpl(
                     category = transaction.category?.name ?: "none",
                     note = transaction.note,
                     budgetItemType = "INCOME",
+                    dateTimeCreated = transaction.dateTimeCreated,
                     dateTimeUpdated = now,
                     remainingBalance = transaction.remainingBalance
                 )

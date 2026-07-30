@@ -22,7 +22,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 updateBudgetTransaction:
 UPDATE BudgetTransactionEntity
-SET amount = ?, paymentMethod = ?, category = ?, note = ?, budgetItemType = ?, dateTimeUpdated = ?, remainingBalance = ?
+SET amount = ?, paymentMethod = ?, category = ?, note = ?, budgetItemType = ?, dateTimeCreated = ?, dateTimeUpdated = ?, remainingBalance = ?
 WHERE id = ?;
 
 deleteBudgetTransaction:
