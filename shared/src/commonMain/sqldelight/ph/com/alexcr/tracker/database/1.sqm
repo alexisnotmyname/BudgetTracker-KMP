@@ -1,0 +1,1 @@
+ALTER TABLE BudgetTransactionEntity ADD COLUMN remainingBalance REAL DEFAULT 0;

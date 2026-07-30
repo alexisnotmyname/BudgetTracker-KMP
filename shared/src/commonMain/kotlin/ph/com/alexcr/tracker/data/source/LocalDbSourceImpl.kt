@@ -2,10 +2,12 @@ package ph.com.alexcr.tracker.data.source
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOneOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import ph.com.alexcr.tracker.database.BudgetTrackerDatabase
+import ph.com.alexcr.tracker.database.BudgetTransactionEntity
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import ph.com.alexcr.tracker.domain.model.PaymentMethod
 import ph.com.alexcr.tracker.domain.model.TransactionCategory
@@ -27,7 +29,8 @@ class LocalDbSourceImpl(
                     note = transaction.note,
                     budgetItemType = "EXPENSE",
                     dateTimeCreated = transaction.dateTimeCreated,
-                    dateTimeUpdated = transaction.dateTimeUpdated
+                    dateTimeUpdated = transaction.dateTimeUpdated,
+                    remainingBalance = transaction.remainingBalance
                 )
                 is BudgetTransaction.Income -> query.insertBudgetTransaction(
                     amount = transaction.amount,
@@ -36,7 +39,8 @@ class LocalDbSourceImpl(
                     note = transaction.note,
                     budgetItemType = "INCOME",
                     dateTimeCreated = transaction.dateTimeCreated,
-                    dateTimeUpdated = transaction.dateTimeUpdated
+                    dateTimeUpdated = transaction.dateTimeUpdated,
+                    remainingBalance = transaction.remainingBalance
                 )
             }
         }
@@ -53,7 +57,8 @@ class LocalDbSourceImpl(
                     category = transaction.category?.name ?: "none",
                     note = transaction.note,
                     budgetItemType = "EXPENSE",
-                    dateTimeUpdated = now
+                    dateTimeUpdated = now,
+                    remainingBalance = transaction.remainingBalance
                 )
                 is BudgetTransaction.Income -> query.updateBudgetTransaction(
                     id = transaction.id,
@@ -62,7 +67,8 @@ class LocalDbSourceImpl(
                     category = transaction.category?.name ?: "none",
                     note = transaction.note,
                     budgetItemType = "INCOME",
-                    dateTimeUpdated = now
+                    dateTimeUpdated = now,
+                    remainingBalance = transaction.remainingBalance
                 )
             }
         }
@@ -73,34 +79,43 @@ class LocalDbSourceImpl(
             .asFlow()
             .mapToList(Dispatchers.Default)
             .map { entities ->
-                entities.map { entity ->
-                    val category = if (entity.category == "none") null
-                                   else TransactionCategory(name = entity.category)
-                    if (entity.budgetItemType == "EXPENSE") {
-                        BudgetTransaction.Expense(
-                            id = entity.id,
-                            amount = entity.amount,
-                            paymentMethod = PaymentMethod.valueOf(entity.paymentMethod),
-                            category = category,
-                            note = entity.note,
-                            dateTimeCreated = entity.dateTimeCreated,
-                            dateTimeUpdated = entity.dateTimeUpdated
-                        )
-                    } else {
-                        BudgetTransaction.Income(
-                            id = entity.id,
-                            amount = entity.amount,
-                            category = category,
-                            note = entity.note,
-                            dateTimeCreated = entity.dateTimeCreated,
-                            dateTimeUpdated = entity.dateTimeUpdated
-                        )
-                    }
-                }
+                entities.map { entity -> entity.toDomain() }
             }
     }
 
     override fun deleteTransaction(id: Long) {
         query.deleteBudgetTransaction(id)
+    }
+
+    override suspend fun getTransactionById(id: Long): BudgetTransaction? {
+        return query.selectBudgetTransactionById(id)
+            .executeAsOneOrNull()
+            ?.toDomain()
+    }
+}
+
+private fun BudgetTransactionEntity.toDomain(): BudgetTransaction {
+    val category = if (category == "none") null else TransactionCategory(name = category)
+    return if (budgetItemType == "EXPENSE") {
+        BudgetTransaction.Expense(
+            id = id,
+            amount = amount,
+            paymentMethod = PaymentMethod.valueOf(paymentMethod),
+            category = category,
+            note = note,
+            dateTimeCreated = dateTimeCreated,
+            dateTimeUpdated = dateTimeUpdated,
+            remainingBalance = remainingBalance
+        )
+    } else {
+        BudgetTransaction.Income(
+            id = id,
+            amount = amount,
+            category = category,
+            note = note,
+            dateTimeCreated = dateTimeCreated,
+            dateTimeUpdated = dateTimeUpdated,
+            remainingBalance = remainingBalance
+        )
     }
 }

@@ -18,7 +18,6 @@ val defaultExpenseCategories: List<TransactionCategory> = listOf(
 
 val defaultIncomeCategories: List<TransactionCategory> = listOf(
     TransactionCategory(name = "Salary"),
-    TransactionCategory(name = "Freelance"),
     TransactionCategory(name = "Investment"),
     TransactionCategory(name = "Gift"),
     TransactionCategory(name = "Other Income"),

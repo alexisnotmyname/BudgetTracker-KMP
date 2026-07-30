@@ -16,6 +16,7 @@ sealed class BudgetTransaction {
         override val dateTimeCreated: Long? = null,
         override val dateTimeUpdated: Long? = null,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val remainingBalance: Double? = null
     ) : BudgetTransaction()
 
     data class Income(
@@ -25,5 +26,6 @@ sealed class BudgetTransaction {
         override val note: String = "",
         override val dateTimeCreated: Long? = null,
         override val dateTimeUpdated: Long? = null,
+        val remainingBalance: Double? = null
     ) : BudgetTransaction()
 }

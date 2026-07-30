@@ -8,4 +8,5 @@ interface LocalDbSource {
     suspend fun updateTransaction(transaction: BudgetTransaction)
     fun getTransactions(): Flow<List<BudgetTransaction>>
     fun deleteTransaction(id: Long)
+    suspend fun getTransactionById(id: Long): BudgetTransaction?
 }

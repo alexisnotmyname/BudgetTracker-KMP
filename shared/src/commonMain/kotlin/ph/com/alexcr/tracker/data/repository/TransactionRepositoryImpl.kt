@@ -28,4 +28,8 @@ class TransactionRepositoryImpl(
     override suspend fun deleteTransaction(transaction: BudgetTransaction) {
         localDbSource.deleteTransaction(transaction.id)
     }
+
+    override suspend fun getTransactionById(id: Long): BudgetTransaction? {
+        return localDbSource.getTransactionById(id)
+    }
 }

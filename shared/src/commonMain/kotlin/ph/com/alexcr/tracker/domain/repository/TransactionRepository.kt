@@ -8,4 +8,5 @@ interface TransactionRepository {
     suspend fun addTransaction(transaction: BudgetTransaction): Result<Unit>
     suspend fun updateTransaction(transaction: BudgetTransaction)
     suspend fun deleteTransaction(transaction: BudgetTransaction)
+    suspend fun getTransactionById(id: Long): BudgetTransaction?
 }

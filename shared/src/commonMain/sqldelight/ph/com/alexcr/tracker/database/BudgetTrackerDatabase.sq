@@ -6,19 +6,23 @@ CREATE TABLE BudgetTransactionEntity (
     note TEXT NOT NULL,
     budgetItemType TEXT NOT NULL,
     dateTimeCreated INTEGER,
-    dateTimeUpdated INTEGER
+    dateTimeUpdated INTEGER,
+    remainingBalance REAL
 );
+
+selectBudgetTransactionById:
+SELECT * FROM BudgetTransactionEntity WHERE id = ?;
 
 getAllBudgetTransactions:
 SELECT * FROM BudgetTransactionEntity ORDER BY dateTimeCreated ASC;
 
 insertBudgetTransaction:
-INSERT INTO BudgetTransactionEntity(amount, paymentMethod, category, note, budgetItemType, dateTimeCreated, dateTimeUpdated)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO BudgetTransactionEntity(amount, paymentMethod, category, note, budgetItemType, dateTimeCreated, dateTimeUpdated, remainingBalance)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 updateBudgetTransaction:
 UPDATE BudgetTransactionEntity
-SET amount = ?, paymentMethod = ?, category = ?, note = ?, budgetItemType = ?, dateTimeUpdated = ?
+SET amount = ?, paymentMethod = ?, category = ?, note = ?, budgetItemType = ?, dateTimeUpdated = ?, remainingBalance = ?
 WHERE id = ?;
 
 deleteBudgetTransaction:
