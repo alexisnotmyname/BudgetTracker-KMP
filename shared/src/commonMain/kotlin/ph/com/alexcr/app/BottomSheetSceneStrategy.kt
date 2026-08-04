@@ -14,10 +14,10 @@ import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 
-class BottomSheetSceneStrategy : SceneStrategy<NavKey> {
-    override fun SceneStrategyScope<NavKey>.calculateScene(
-        entries: List<NavEntry<NavKey>>
-    ): OverlayScene<NavKey>? {
+class BottomSheetSceneStrategy : SceneStrategy<AppRoute> {
+    override fun SceneStrategyScope<AppRoute>.calculateScene(
+        entries: List<NavEntry<AppRoute>>
+    ): OverlayScene<AppRoute>? {
         val topEntry = entries.lastOrNull() ?: return null
         if (topEntry.contentKey !is AppRoute.TransactionModal) return null
 
@@ -32,9 +32,9 @@ class BottomSheetSceneStrategy : SceneStrategy<NavKey> {
 }
 
 private class TransactionModalOverlayScene(
-    private val topEntry: NavEntry<NavKey>,
-    private val underlaidEntries: List<NavEntry<NavKey>>
-) : OverlayScene<NavKey> {
+    private val topEntry: NavEntry<AppRoute>,
+    private val underlaidEntries: List<NavEntry<AppRoute>>
+) : OverlayScene<AppRoute> {
     override val key = topEntry.contentKey
     override val entries = listOf(topEntry)
     override val previousEntries = underlaidEntries

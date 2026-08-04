@@ -69,14 +69,14 @@ fun InputIncome(
     var isAmountFocused by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
-    var selectedCategory by remember(categories) {
+    var selectedCategory by remember(initialTransaction?.id, categories) {
         mutableStateOf(
             initialTransaction?.category
                 ?: categories.firstOrNull()
                 ?: TransactionCategory(name = "")
         )
     }
-    var notes by remember { mutableStateOf(initialTransaction?.note ?: "") }
+    var notes by remember(initialTransaction?.id) { mutableStateOf(initialTransaction?.note ?: "") }
 
     val (initInteger, initDecimal, initDecimalMode) = remember(initialTransaction) {
         val amount = initialTransaction?.amount ?: 0.0
@@ -95,9 +95,9 @@ fun InputIncome(
         }
     }
 
-    var integerPart by remember { mutableStateOf(initInteger) }
-    var decimalPart by remember { mutableStateOf<String?>(initDecimal) }
-    var isDecimalMode by remember { mutableStateOf(initDecimalMode) }
+    var integerPart by remember(initialTransaction?.id) { mutableStateOf(initInteger) }
+    var decimalPart by remember(initialTransaction?.id) { mutableStateOf(initDecimal) }
+    var isDecimalMode by remember(initialTransaction?.id) { mutableStateOf(initDecimalMode) }
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialTransaction?.dateTimeCreated

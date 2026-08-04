@@ -13,6 +13,7 @@ import ph.com.alexcr.tracker.data.source.LocalDbSourceImpl
 import ph.com.alexcr.tracker.database.BudgetTrackerDatabase
 import ph.com.alexcr.tracker.domain.repository.TransactionRepository
 import ph.com.alexcr.tracker.presentation.BudgetListViewModel
+import ph.com.alexcr.tracker.presentation.transactionmodal.TransactionModalViewModel
 
 expect val platformModule: Module
 
@@ -24,6 +25,7 @@ val sharedModule = module {
     singleOf(::TransactionRepositoryImpl).bind<TransactionRepository>()
 
     viewModelOf(::BudgetListViewModel)
+    viewModelOf(::TransactionModalViewModel)
 }
 
 

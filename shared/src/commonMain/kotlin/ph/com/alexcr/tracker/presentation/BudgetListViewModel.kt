@@ -15,7 +15,7 @@ import ph.com.alexcr.tracker.domain.repository.TransactionRepository
 
 class BudgetListViewModel(
     private val transactionRepository: TransactionRepository
-): ViewModel() {
+) : ViewModel() {
 
     private val _state = MutableStateFlow(BudgetListState())
     val state = _state
@@ -48,12 +48,7 @@ class BudgetListViewModel(
     }
 
     fun onAction(action: BudgetTransactionAction) {
-        when(action) {
-            is BudgetTransactionAction.OnAddTransaction -> {
-                viewModelScope.launch {
-                    transactionRepository.addTransaction(action.budgetTransaction)
-                }
-            }
+        when (action) {
             BudgetTransactionAction.OnQueryTransaction -> {
                 getTransactionList()
             }
@@ -62,16 +57,6 @@ class BudgetListViewModel(
                 viewModelScope.launch {
                     transactionRepository.deleteTransaction(action.budgetTransaction)
                 }
-            }
-
-            is BudgetTransactionAction.OnEditTransaction -> {
-                viewModelScope.launch {
-                    transactionRepository.updateTransaction(action.budgetTransaction)
-                }
-            }
-
-            is BudgetTransactionAction.OnSelectTransaction -> {
-                _state.update { it.copy(selectedTransaction = action.transaction) }
             }
         }
     }

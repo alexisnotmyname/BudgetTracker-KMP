@@ -9,5 +9,5 @@ sealed interface AppRoute : NavKey {
     data object BudgetList : AppRoute
 
     @Serializable
-    data object TransactionModal : AppRoute
+    data class TransactionModal(val transactionId: Long?) : AppRoute
 }

@@ -73,7 +73,6 @@ fun BudgetListScreenRoot(
         state = state,
         onAction = viewModel::onAction,
         onNavigateToModal = { transaction ->
-            viewModel.onAction(BudgetTransactionAction.OnSelectTransaction(transaction))
             onNavigateToModal(transaction)
         }
     )
