@@ -15,11 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -27,13 +23,11 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,12 +42,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import budget.shared.generated.resources.Res
 import budget.shared.generated.resources.save
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import ph.com.alexcr.core.presentation.components.CategoryPickerSheet
+import ph.com.alexcr.core.presentation.components.DateFilterPicker
 import ph.com.alexcr.core.presentation.components.GenericButton
 import ph.com.alexcr.core.presentation.components.NumPadBottomSheet
+import ph.com.alexcr.core.presentation.util.toEpochMillis
 import ph.com.alexcr.core.presentation.theme.BudgetTrackerTheme
 import ph.com.alexcr.core.presentation.theme.surfaceLight
 import ph.com.alexcr.core.presentation.util.iconForCategory
@@ -64,7 +61,6 @@ import ph.com.alexcr.tracker.domain.model.defaultExpenseCategories
 import kotlin.text.ifEmpty
 import kotlin.time.Instant
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InputExpense(
     categories: List<TransactionCategory>,
@@ -112,14 +108,19 @@ fun InputExpense(
     var decimalPart by remember(initialTransaction?.id) { mutableStateOf(initDecimal) }
     var isDecimalMode by remember(initialTransaction?.id) { mutableStateOf(initDecimalMode) }
 
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialTransaction?.dateTimeCreated
-    )
-    val selectedDate = datePickerState.selectedDateMillis?.let {
-        val local = Instant.fromEpochMilliseconds(it)
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-        val month = local.month.name.lowercase().replaceFirstChar { c -> c.uppercase() }.take(3)
-        "$month ${local.day.toString().padStart(2, '0')}, ${local.year}"
+    var selectedDate by remember(initialTransaction?.id) {
+        mutableStateOf(
+            initialTransaction?.dateTimeCreated?.let { millis ->
+                Instant.fromEpochMilliseconds(millis)
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .let { LocalDate(it.year, it.monthNumber, it.dayOfMonth) }
+            }
+        )
+    }
+
+    val displayDateText = selectedDate?.let {
+        val month = it.month.name.lowercase().replaceFirstChar { c -> c.uppercase() }.take(3)
+        "$month ${it.dayOfMonth.toString().padStart(2, '0')}, ${it.year}"
     } ?: ""
 
     val displayAmount = remember(integerPart, decimalPart, isDecimalMode) {
@@ -149,7 +150,7 @@ fun InputExpense(
         selectedPaymentMethod,
         selectedCategory,
         notes,
-        datePickerState.selectedDateMillis
+        selectedDate
     ) {
         onBudgetItemChange(
             BudgetTransaction.Expense(
@@ -158,7 +159,7 @@ fun InputExpense(
                 paymentMethod = selectedPaymentMethod,
                 category = selectedCategory,
                 note = notes,
-                dateTimeCreated = datePickerState.selectedDateMillis
+                dateTimeCreated = selectedDate?.toEpochMillis()
             )
         )
     }
@@ -311,7 +312,7 @@ fun InputExpense(
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = MaterialTheme.typography.labelLarge,
-                value = selectedDate,
+                value = displayDateText,
                 onValueChange = {},
                 readOnly = true,
                 enabled = false,
@@ -388,7 +389,7 @@ fun InputExpense(
                         paymentMethod = selectedPaymentMethod,
                         category = selectedCategory,
                         note = notes,
-                        dateTimeCreated = datePickerState.selectedDateMillis,
+                        dateTimeCreated = selectedDate?.toEpochMillis(),
                     )
                 )
             }
@@ -442,22 +443,11 @@ fun InputExpense(
     }
 
     if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            shape = RoundedCornerShape(8.dp),
-            confirmButton = {
-                IconButton(onClick = { showDatePicker = false }) {
-                    Text(
-                        text = "OK",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                }
-            },
-        ) {
-            DatePicker(
-                state = datePickerState
-            )
-        }
+        DateFilterPicker(
+            selectedDate = selectedDate,
+            onDateSelected = { newDate -> selectedDate = newDate },
+            onDismiss = { showDatePicker = false }
+        )
     }
 }
 

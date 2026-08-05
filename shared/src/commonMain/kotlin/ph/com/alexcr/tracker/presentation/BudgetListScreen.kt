@@ -10,14 +10,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
@@ -52,6 +58,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import ph.com.alexcr.core.presentation.components.BaseAlertDialog
 import ph.com.alexcr.core.presentation.components.GenericButton
+import ph.com.alexcr.core.presentation.components.MonthYearPickerDialog
 import ph.com.alexcr.core.presentation.components.TextButton
 import ph.com.alexcr.core.presentation.components.Titlebar
 import ph.com.alexcr.core.presentation.theme.BudgetTrackerTheme
@@ -61,6 +68,7 @@ import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import ph.com.alexcr.tracker.domain.model.defaultExpenseCategories
 import ph.com.alexcr.tracker.domain.model.defaultIncomeCategories
 import ph.com.alexcr.tracker.presentation.components.BalanceSummaryCard
+import ph.com.alexcr.tracker.presentation.components.BalanceSummaryCardSkeleton
 import ph.com.alexcr.tracker.presentation.components.BudgetItemCard
 
 @Composable
@@ -93,13 +101,33 @@ fun BudgetListScreen(
     onNavigateToModal: (BudgetTransaction?) -> Unit
 ) {
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showMonthFilterDialog by remember { mutableStateOf(false) }
     var pendingSwipeReset by remember { mutableStateOf<(() -> Unit)?>(null) }
     var transactionPendingDeletion by remember { mutableStateOf<BudgetTransaction?>(null) }
 
     Scaffold(
         modifier = modifier,
         topBar = {
-            Titlebar(text = stringResource(Res.string.budget_tracker))
+            Titlebar(
+                text = stringResource(Res.string.budget_tracker),
+                actions = {
+                    BadgedBox(
+                        badge = {
+                            if (state.selectedYearMonth != null) {
+                                Badge()
+                            }
+                        }
+                    ) {
+                        IconButton(onClick = { showMonthFilterDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.DateRange,
+                                contentDescription = "Filter by month",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -120,11 +148,15 @@ fun BudgetListScreen(
                     .padding(horizontal = 16.dp)
                     .padding(top = 16.dp),
             ) {
-                BalanceSummaryCard(
-                    totalIncome = state.totalIncome,
-                    totalExpense = state.totalExpense,
-                    remainingBalance = state.remainingBalance
-                )
+                if (state.isLoading) {
+                    BalanceSummaryCardSkeleton()
+                } else {
+                    BalanceSummaryCard(
+                        totalIncome = state.totalIncome,
+                        totalExpense = state.totalExpense,
+                        remainingBalance = state.remainingBalance
+                    )
+                }
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -138,9 +170,13 @@ fun BudgetListScreen(
             }
         } else {
             val groupedTransactions = remember(state.budgetList) {
-                state.budgetList.groupBy { formatDateKey(it.dateTimeCreated) }
-                    .entries.sortedByDescending { it.key }
+                state.budgetList
+                    .groupBy { formatDateKey(it.dateTimeCreated) }
+                    .entries
+                    .sortedByDescending { it.key }
+                    .map { (_, transactions) -> transactions.sortedByDescending { it.dateTimeCreated } }
             }
+            println("Grouped Transactions: $groupedTransactions")
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -150,14 +186,18 @@ fun BudgetListScreen(
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
                 item {
-                    BalanceSummaryCard(
-                        totalIncome = state.totalIncome,
-                        totalExpense = state.totalExpense,
-                        remainingBalance = state.remainingBalance,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    if (state.isLoading) {
+                        BalanceSummaryCardSkeleton(modifier = Modifier.padding(bottom = 8.dp))
+                    } else {
+                        BalanceSummaryCard(
+                            totalIncome = state.totalIncome,
+                            totalExpense = state.totalExpense,
+                            remainingBalance = state.remainingBalance,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                 }
-                groupedTransactions.forEach { (_, transactionsForDate) ->
+                groupedTransactions.forEach { transactionsForDate ->
                     val firstItem = transactionsForDate.first()
                     stickyHeader(key = "header_${formatDateKey(firstItem.dateTimeCreated)}") {
                         Text(
@@ -215,6 +255,16 @@ fun BudgetListScreen(
                 }
             }
         }
+    }
+
+    if (showMonthFilterDialog) {
+        MonthYearPickerDialog(
+            selectedYearMonth = state.selectedYearMonth,
+            onYearMonthSelected = { yearMonth ->
+                onAction(BudgetTransactionAction.OnFilterByMonth(yearMonth))
+            },
+            onDismiss = { showMonthFilterDialog = false }
+        )
     }
 
     if (showDeleteConfirmDialog) {

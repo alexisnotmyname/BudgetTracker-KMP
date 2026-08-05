@@ -1,10 +1,13 @@
 package ph.com.alexcr.tracker.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -13,10 +16,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ph.com.alexcr.core.presentation.components.shimmerLoading
 import ph.com.alexcr.core.presentation.theme.BudgetTrackerTheme
 import ph.com.alexcr.core.presentation.theme.backgroundLight
 import ph.com.alexcr.core.presentation.util.formatAmount
@@ -107,6 +112,73 @@ private fun SummaryItem(
     }
 }
 
+@Composable
+fun BalanceSummaryCardSkeleton(
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundLight),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(130.dp)
+                        .height(14.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .shimmerLoading()
+                )
+                Box(
+                    modifier = Modifier
+                        .width(180.dp)
+                        .height(32.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .shimmerLoading()
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                repeat(2) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(60.dp)
+                                .height(12.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .shimmerLoading()
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(90.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .shimmerLoading()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun BalanceSummaryCardPreview() {
@@ -116,5 +188,13 @@ fun BalanceSummaryCardPreview() {
             totalExpense = 30000.0,
             remainingBalance = 20000.0
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun BalanceSummaryCardSkeletonPreview() {
+    BudgetTrackerTheme {
+        BalanceSummaryCardSkeleton()
     }
 }

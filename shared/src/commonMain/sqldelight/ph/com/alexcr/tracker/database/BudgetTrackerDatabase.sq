@@ -14,7 +14,12 @@ selectBudgetTransactionById:
 SELECT * FROM BudgetTransactionEntity WHERE id = ?;
 
 getAllBudgetTransactions:
-SELECT * FROM BudgetTransactionEntity ORDER BY dateTimeCreated ASC;
+SELECT * FROM BudgetTransactionEntity ORDER BY dateTimeCreated DESC;
+
+getTransactionsByMonth:
+SELECT * FROM BudgetTransactionEntity
+WHERE dateTimeCreated >= :startMillis AND dateTimeCreated < :endMillis
+ORDER BY dateTimeCreated DESC;
 
 insertBudgetTransaction:
 INSERT INTO BudgetTransactionEntity(amount, paymentMethod, category, note, budgetItemType, dateTimeCreated, dateTimeUpdated, remainingBalance)

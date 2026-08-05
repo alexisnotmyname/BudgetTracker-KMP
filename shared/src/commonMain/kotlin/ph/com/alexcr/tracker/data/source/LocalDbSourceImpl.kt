@@ -2,7 +2,6 @@ package ph.com.alexcr.tracker.data.source
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
-import app.cash.sqldelight.coroutines.mapToOneOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -11,7 +10,7 @@ import ph.com.alexcr.tracker.database.BudgetTransactionEntity
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import ph.com.alexcr.tracker.domain.model.PaymentMethod
 import ph.com.alexcr.tracker.domain.model.TransactionCategory
-import kotlin.time.Clock
+import kotlin.time.Clock.System
 
 class LocalDbSourceImpl(
     database: BudgetTrackerDatabase
@@ -47,7 +46,7 @@ class LocalDbSourceImpl(
     }
 
     override suspend fun updateTransaction(transaction: BudgetTransaction) {
-        val now = Clock.System.now().toEpochMilliseconds()
+        val now = System.now().toEpochMilliseconds()
         query.transaction {
             when (transaction) {
                 is BudgetTransaction.Expense -> query.updateBudgetTransaction(
@@ -78,6 +77,15 @@ class LocalDbSourceImpl(
 
     override fun getTransactions(): Flow<List<BudgetTransaction>> {
         return query.getAllBudgetTransactions()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { entities ->
+                entities.map { entity -> entity.toDomain() }
+            }
+    }
+
+    override fun getTransactionsByMonth(startMillis: Long, endMillis: Long): Flow<List<BudgetTransaction>> {
+        return query.getTransactionsByMonth(startMillis, endMillis)
             .asFlow()
             .mapToList(Dispatchers.Default)
             .map { entities ->

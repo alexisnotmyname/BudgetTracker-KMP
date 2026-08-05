@@ -5,6 +5,7 @@ import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 
 interface TransactionRepository {
     fun getTransactions(): Flow<List<BudgetTransaction>>
+    fun getTransactionsByMonth(year: Int, month: Int): Flow<List<BudgetTransaction>>
     suspend fun addTransaction(transaction: BudgetTransaction): Result<Unit>
     suspend fun updateTransaction(transaction: BudgetTransaction)
     suspend fun deleteTransaction(transaction: BudgetTransaction)

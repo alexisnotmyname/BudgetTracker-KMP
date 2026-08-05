@@ -7,6 +7,7 @@ interface LocalDbSource {
     suspend fun insertTransaction(transaction: BudgetTransaction)
     suspend fun updateTransaction(transaction: BudgetTransaction)
     fun getTransactions(): Flow<List<BudgetTransaction>>
+    fun getTransactionsByMonth(startMillis: Long, endMillis: Long): Flow<List<BudgetTransaction>>
     fun deleteTransaction(id: Long)
     suspend fun getTransactionById(id: Long): BudgetTransaction?
 }

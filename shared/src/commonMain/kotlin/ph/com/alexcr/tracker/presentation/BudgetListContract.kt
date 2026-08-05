@@ -1,5 +1,6 @@
 package ph.com.alexcr.tracker.presentation
 
+import kotlinx.datetime.YearMonth
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
 import ph.com.alexcr.tracker.domain.model.TransactionCategory
 import ph.com.alexcr.tracker.domain.model.defaultExpenseCategories
@@ -13,10 +14,12 @@ data class BudgetListState(
     val totalIncome: Double = 0.0,
     val totalExpense: Double = 0.0,
     val remainingBalance: Double = 0.0,
+    val selectedYearMonth: YearMonth? = null,
     val error: String = ""
 )
 
 sealed interface BudgetTransactionAction {
     data object OnQueryTransaction: BudgetTransactionAction
     data class OnDeleteTransaction(val budgetTransaction: BudgetTransaction): BudgetTransactionAction
+    data class OnFilterByMonth(val yearMonth: YearMonth?): BudgetTransactionAction
 }

@@ -1,8 +1,19 @@
 package ph.com.alexcr.core.presentation.util
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
+
+/** Converts a [LocalDate] to epoch milliseconds at midnight (local time). */
+fun LocalDate.toEpochMillis(): Long {
+    return LocalDateTime(this, LocalTime(0, 0))
+        .toInstant(TimeZone.currentSystemDefault())
+        .toEpochMilliseconds()
+}
 
 fun formatDateTime(epochMillis: Long?): String {
     epochMillis ?: return ""
@@ -21,7 +32,7 @@ fun formatDateKey(epochMillis: Long?): String {
     epochMillis ?: return ""
     val local = Instant.fromEpochMilliseconds(epochMillis)
         .toLocalDateTime(TimeZone.currentSystemDefault())
-    val month = local.month.toString().padStart(2, '0')
+    val month = local.monthNumber.toString().padStart(2, '0')
     val day = local.day.toString().padStart(2, '0')
     return "${local.year}-$month-$day"
 }
