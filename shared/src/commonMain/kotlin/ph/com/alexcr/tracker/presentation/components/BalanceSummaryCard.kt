@@ -31,6 +31,7 @@ fun BalanceSummaryCard(
     totalIncome: Double,
     totalExpense: Double,
     remainingBalance: Double,
+    openingBalance: Double = 0.0,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -52,7 +53,7 @@ fun BalanceSummaryCard(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Remaining Balance",
+                    text = "Closing Balance",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                 )
@@ -71,6 +72,11 @@ fun BalanceSummaryCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
+                SummaryItem(
+                    label = "Opening",
+                    amount = openingBalance,
+                    amountColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
+                )
                 SummaryItem(
                     label = "Income",
                     amount = totalIncome,
@@ -186,7 +192,8 @@ fun BalanceSummaryCardPreview() {
         BalanceSummaryCard(
             totalIncome = 50000.0,
             totalExpense = 30000.0,
-            remainingBalance = 20000.0
+            remainingBalance = 40000.0,
+            openingBalance = 20000.0
         )
     }
 }

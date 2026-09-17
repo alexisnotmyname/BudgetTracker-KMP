@@ -17,6 +17,7 @@ import kotlinx.datetime.YearMonth
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.number
 import ph.com.alexcr.tracker.domain.model.BudgetTransaction
+import ph.com.alexcr.tracker.domain.model.MonthlyBalance
 import ph.com.alexcr.tracker.domain.repository.TransactionRepository
 import kotlin.time.Clock.System
 
@@ -42,6 +43,7 @@ class BudgetListViewModel(
     private var currentJob: Job? = null
 
     private fun loadTransactions(yearMonth: YearMonth?) {
+        println("Loading transactions for: $yearMonth")
         currentJob?.cancel()
         _state.update { it.copy(isLoading = true) }
         val flow = if (yearMonth == null) {
@@ -51,21 +53,53 @@ class BudgetListViewModel(
         }
         currentJob = flow
             .onEach { transactions ->
-                println("Transactions: $transactions")
                 val totalIncome = transactions
                     .filterIsInstance<BudgetTransaction.Income>()
                     .sumOf { it.amount }
                 val totalExpense = transactions
                     .filterIsInstance<BudgetTransaction.Expense>()
                     .sumOf { it.amount }
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        budgetList = transactions,
-                        totalIncome = totalIncome,
-                        totalExpense = totalExpense,
-                        remainingBalance = totalIncome - totalExpense
-                    )
+
+                if (yearMonth != null) {
+                    val snapshot = transactionRepository.getMonthlyBalance(yearMonth.year, yearMonth.month.number)
+                    if (snapshot != null) {
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                budgetList = transactions,
+                                totalIncome = totalIncome,
+                                totalExpense = totalExpense,
+                                openingBalance = snapshot.openingBalance,
+                                remainingBalance = snapshot.closingBalance,
+                                showInitialBalanceDialog = false
+                            )
+                        }
+                    } else {
+                        // No snapshot — prompt user only if this is the earliest/first-ever month
+                        val hasTransactions = transactions.isNotEmpty()
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                budgetList = transactions,
+                                totalIncome = totalIncome,
+                                totalExpense = totalExpense,
+                                openingBalance = 0.0,
+                                remainingBalance = totalIncome - totalExpense,
+                                showInitialBalanceDialog = hasTransactions
+                            )
+                        }
+                    }
+                } else {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            budgetList = transactions,
+                            totalIncome = totalIncome,
+                            totalExpense = totalExpense,
+                            openingBalance = 0.0,
+                            remainingBalance = totalIncome - totalExpense
+                        )
+                    }
                 }
             }
             .launchIn(viewModelScope)
@@ -86,6 +120,42 @@ class BudgetListViewModel(
             is BudgetTransactionAction.OnFilterByMonth -> {
                 _state.update { it.copy(selectedYearMonth = action.yearMonth) }
                 loadTransactions(action.yearMonth)
+            }
+
+            is BudgetTransactionAction.OnSetInitialOpeningBalance -> {
+                val yearMonth = _state.value.selectedYearMonth ?: return
+                viewModelScope.launch {
+                    val income = _state.value.totalIncome
+                    val expense = _state.value.totalExpense
+                    val closing = action.amount + income - expense
+                    transactionRepository.upsertMonthlyBalance(
+                        MonthlyBalance(
+                            year = yearMonth.year,
+                            month = yearMonth.month.number,
+                            openingBalance = action.amount,
+                            totalIncome = income,
+                            totalExpense = expense,
+                            closingBalance = closing
+                        )
+                    )
+                    // Cascade recalculate all subsequent months
+                    val (nextYear, nextMonth) = if (yearMonth.month.number == 12)
+                        yearMonth.year + 1 to 1
+                    else
+                        yearMonth.year to yearMonth.month.number + 1
+                    transactionRepository.recalculateBalancesFrom(nextYear, nextMonth)
+                    _state.update {
+                        it.copy(
+                            openingBalance = action.amount,
+                            remainingBalance = closing,
+                            showInitialBalanceDialog = false
+                        )
+                    }
+                }
+            }
+
+            BudgetTransactionAction.OnDismissInitialBalanceDialog -> {
+                _state.update { it.copy(showInitialBalanceDialog = false) }
             }
         }
     }

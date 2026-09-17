@@ -32,3 +32,31 @@ WHERE id = ?;
 
 deleteBudgetTransaction:
 DELETE FROM BudgetTransactionEntity WHERE id = ?;
+
+CREATE TABLE IF NOT EXISTS MonthlyBalanceEntity (
+    year           INTEGER NOT NULL,
+    month          INTEGER NOT NULL,
+    openingBalance REAL    NOT NULL DEFAULT 0.0,
+    totalIncome    REAL    NOT NULL DEFAULT 0.0,
+    totalExpense   REAL    NOT NULL DEFAULT 0.0,
+    closingBalance REAL    NOT NULL DEFAULT 0.0,
+    PRIMARY KEY (year, month)
+);
+
+getMonthlyBalance:
+SELECT * FROM MonthlyBalanceEntity WHERE year = ? AND month = ?;
+
+getAllMonthlyBalances:
+SELECT * FROM MonthlyBalanceEntity ORDER BY year ASC, month ASC;
+
+getMonthlyBalancesFrom:
+SELECT * FROM MonthlyBalanceEntity
+WHERE (year > :year) OR (year = :year AND month >= :month)
+ORDER BY year ASC, month ASC;
+
+insertOrReplaceMonthlyBalance:
+INSERT OR REPLACE INTO MonthlyBalanceEntity(year, month, openingBalance, totalIncome, totalExpense, closingBalance)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteMonthlyBalance:
+DELETE FROM MonthlyBalanceEntity WHERE year = ? AND month = ?;

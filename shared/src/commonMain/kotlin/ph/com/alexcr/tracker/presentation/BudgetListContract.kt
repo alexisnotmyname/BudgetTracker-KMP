@@ -13,8 +13,10 @@ data class BudgetListState(
     val incomeCategories: List<TransactionCategory> = defaultIncomeCategories,
     val totalIncome: Double = 0.0,
     val totalExpense: Double = 0.0,
+    val openingBalance: Double = 0.0,
     val remainingBalance: Double = 0.0,
     val selectedYearMonth: YearMonth? = null,
+    val showInitialBalanceDialog: Boolean = false,
     val error: String = ""
 )
 
@@ -22,4 +24,6 @@ sealed interface BudgetTransactionAction {
     data object OnQueryTransaction: BudgetTransactionAction
     data class OnDeleteTransaction(val budgetTransaction: BudgetTransaction): BudgetTransactionAction
     data class OnFilterByMonth(val yearMonth: YearMonth?): BudgetTransactionAction
+    data class OnSetInitialOpeningBalance(val amount: Double): BudgetTransactionAction
+    data object OnDismissInitialBalanceDialog: BudgetTransactionAction
 }

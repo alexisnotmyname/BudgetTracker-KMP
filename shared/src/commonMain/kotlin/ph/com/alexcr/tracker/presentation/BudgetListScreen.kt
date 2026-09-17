@@ -70,6 +70,7 @@ import ph.com.alexcr.tracker.domain.model.defaultIncomeCategories
 import ph.com.alexcr.tracker.presentation.components.BalanceSummaryCard
 import ph.com.alexcr.tracker.presentation.components.BalanceSummaryCardSkeleton
 import ph.com.alexcr.tracker.presentation.components.BudgetItemCard
+import ph.com.alexcr.tracker.presentation.components.InitialBalanceDialog
 
 @Composable
 fun BudgetListScreenRoot(
@@ -154,7 +155,8 @@ fun BudgetListScreen(
                     BalanceSummaryCard(
                         totalIncome = state.totalIncome,
                         totalExpense = state.totalExpense,
-                        remainingBalance = state.remainingBalance
+                        remainingBalance = state.remainingBalance,
+                        openingBalance = state.openingBalance
                     )
                 }
                 Box(
@@ -193,6 +195,7 @@ fun BudgetListScreen(
                             totalIncome = state.totalIncome,
                             totalExpense = state.totalExpense,
                             remainingBalance = state.remainingBalance,
+                            openingBalance = state.openingBalance,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
@@ -264,6 +267,17 @@ fun BudgetListScreen(
                 onAction(BudgetTransactionAction.OnFilterByMonth(yearMonth))
             },
             onDismiss = { showMonthFilterDialog = false }
+        )
+    }
+
+    if (state.showInitialBalanceDialog) {
+        InitialBalanceDialog(
+            onConfirm = { amount ->
+                onAction(BudgetTransactionAction.OnSetInitialOpeningBalance(amount))
+            },
+            onDismiss = {
+                onAction(BudgetTransactionAction.OnDismissInitialBalanceDialog)
+            }
         )
     }
 

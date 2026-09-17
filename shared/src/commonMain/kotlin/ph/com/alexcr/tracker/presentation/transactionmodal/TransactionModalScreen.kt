@@ -145,13 +145,13 @@ fun TransactionModal(
                 }
 
                 isEditMode -> {
-                    when (val current = draft) {
+                    when (draft) {
                         is BudgetTransaction.Expense -> {
-                            key(current.id) {
+                            key(draft.id) {
                                 InputExpense(
                                     modifier = Modifier.fillMaxSize(),
                                     categories = expenseCategories,
-                                    initialTransaction = current,
+                                    initialTransaction = draft,
                                     onBudgetItemChange = onDraftChanged,
                                     onSave = { onSave(it) },
                                 )
@@ -159,11 +159,11 @@ fun TransactionModal(
                         }
 
                         is BudgetTransaction.Income -> {
-                            key(current.id) {
+                            key(draft.id) {
                                 InputIncome(
                                     modifier = Modifier.fillMaxSize(),
                                     categories = incomeCategories,
-                                    initialTransaction = current,
+                                    initialTransaction = draft,
                                     onBudgetItemChange = onDraftChanged,
                                     onSave = { onSave(it) },
                                 )
